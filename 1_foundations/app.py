@@ -6,7 +6,6 @@ import requests
 from pypdf import PdfReader
 import gradio as gr
 
-
 load_dotenv(override=True)
 
 
@@ -130,7 +129,7 @@ If the user is engaging in discussion, try to steer them towards getting in touc
         done = False
         while not done:
             response = self.openai.chat.completions.create(
-                model="gpt-4o-mini", messages=messages, tools=tools
+                model="gpt-5-nano", messages=messages, tools=tools
             )
             if response.choices[0].finish_reason == "tool_calls":
                 message = response.choices[0].message
