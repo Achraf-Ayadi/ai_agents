@@ -2,10 +2,12 @@ from autogen_core import MessageContext, RoutedAgent, message_handler
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+from autogen_core.models import ModelInfo
 import messages
 from autogen_core import TRACE_LOGGER_NAME
 import importlib
 import logging
+import os
 from autogen_core import AgentId
 from dotenv import load_dotenv
 
@@ -33,7 +35,17 @@ class Creator(RoutedAgent):
 
     def __init__(self, name) -> None:
         super().__init__(name)
-        model_client = OpenAIChatCompletionClient(model="gpt-5-nano", temperature=1.0)
+        model_client = OpenAIChatCompletionClient(
+            model="gpt-5-nano",
+            temperature=1.0,
+            model_info=ModelInfo(
+                vision=True,
+                function_calling=True,
+                json_output=True,
+                structured_output=True,
+                family="gpt-5",
+            ),
+        )
         self._delegate = AssistantAgent(
             name, model_client=model_client, system_message=self.system_message
         )
@@ -53,16 +65,19 @@ class Creator(RoutedAgent):
     ) -> messages.Message:
         filename = message.content
         agent_name = filename.split(".")[0]
+        os.makedirs(messages.GENERATED_DIR, exist_ok=True)
+        filepath = os.path.join(messages.GENERATED_DIR, filename)
         text_message = TextMessage(content=self.get_user_prompt(), source="user")
         response = await self._delegate.on_messages(
             [text_message], ctx.cancellation_token
         )
-        with open(filename, "w", encoding="utf-8") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(response.chat_message.content)
         print(
             f"** Creator has created python code for agent {agent_name} - about to register with Runtime"
         )
-        module = importlib.import_module(agent_name)
+        importlib.invalidate_caches()
+        module = importlib.import_module(f"{messages.GENERATED_DIR}.{agent_name}")
         await module.Agent.register(
             self.runtime, agent_name, lambda: module.Agent(agent_name)
         )

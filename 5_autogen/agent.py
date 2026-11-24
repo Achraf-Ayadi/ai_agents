@@ -2,6 +2,7 @@ from autogen_core import MessageContext, RoutedAgent, message_handler
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+from autogen_core.models import ModelInfo
 import messages
 import random
 from dotenv import load_dotenv
@@ -25,7 +26,16 @@ class Agent(RoutedAgent):
 
     def __init__(self, name) -> None:
         super().__init__(name)
-        model_client = OpenAIChatCompletionClient(model="gpt-5-nano", temperature=0.7)
+        model_client = OpenAIChatCompletionClient(
+            model="gpt-5-nano",
+            model_info=ModelInfo(
+                vision=True,
+                function_calling=True,
+                json_output=True,
+                structured_output=True,
+                family="gpt-5",
+            ),
+        )
         self._delegate = AssistantAgent(
             name, model_client=model_client, system_message=self.system_message
         )

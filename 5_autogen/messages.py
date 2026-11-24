@@ -6,6 +6,8 @@ import os
 
 import random
 
+GENERATED_DIR = "generated"
+
 @dataclass
 class Message:
     content: str
@@ -13,9 +15,8 @@ class Message:
 
 def find_recipient() -> AgentId:
     try:
-        agent_files = glob.glob("agent*.py")
-        agent_names = [os.path.splitext(file)[0] for file in agent_files]
-        agent_names.remove("agent")
+        agent_files = glob.glob(os.path.join(GENERATED_DIR, "agent*.py"))
+        agent_names = [os.path.splitext(os.path.basename(file))[0] for file in agent_files]
         agent_name = random.choice(agent_names)
         print(f"Selecting agent for refinement: {agent_name}")
         return AgentId(agent_name, "default")
